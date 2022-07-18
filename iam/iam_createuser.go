@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
+	"github.com/GaryLouisStewart/aws_go"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -18,8 +20,21 @@ func createIamUsers() {
 
 	// create a new session in eu-west-2 london region, change this to the region that matches your aws credenetials file ~/.aws/credentials or ~/.aws/profile file(s)
 
+	// use the custom http client function and struct that we defined in our aws_go module
+	httpClient, err := aws_go.NewHTTPClientWithSettings(aws_go.HTTPClientSettings{
+		Connect:          5 * time.Second,
+		ExpectContinue:   1 * time.Second,
+		IdleConn:         60 * time.Second,
+		ConnKeepAlive:    20 * time.Second,
+		MaxAllIdleConns:  75,
+		MaxHostIdleConns: 10,
+		ResponseHeader:   5 * time.Second,
+		TLSHandshake:     5 * time.Second,
+	})
+
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String("eu-west-2")},
+		HTTPClient: httpClient,
+		Region:     aws.String("eu-west-2")},
 	)
 
 	// Create a IAM service client.
@@ -63,7 +78,8 @@ func createIamUsers() {
 			}
 			fmt.Println("Success", result)
 		} else {
-			fmt.Println("GetUser Error", err)
+			fmt.Printf("User %s Already exists..", line)
+			fmt.Println(err)
 		}
 
 	}
